@@ -187,4 +187,9 @@ GET /api/properties?location=NYC&minPrice=500000&maxPrice=3000000
 
 ## License
 
+
+Swagger URL to test
+
+http://localhost:3000/api-docs
+
 MIT
