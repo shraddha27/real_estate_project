@@ -2,73 +2,54 @@
 
 ## Project Structure
 
-This project follows a **clean architecture** with **MVC (Model-View-Controller)** pattern, tailored for enterprise-grade TypeScript applications.
+This project uses **vertical feature slices**: each business capability owns its contract, validation, persistence adapter, service, controller, and routes. Shared infrastructure remains outside feature folders.
 
 ### Directory Layout
 
 ```
 src/
-├── config/              # Configuration Management
-│   ├── environment.ts   # Environment variables
-│   └── index.ts         # Exports
-│
-├── models/              # Data Models & Interfaces
-│   ├── property.ts      # Property interface and DTOs
-│   └── index.ts         # Exports
-│
-├── services/            # Business Logic Layer
-│   ├── property.service.ts   # Service implementation
-│   └── index.ts              # Exports
-│
-├── controllers/         # HTTP Request Handlers
-│   ├── property.controller.ts # Route handlers
-│   └── index.ts              # Exports
-│
-├── routes/              # API Route Definitions
-│   ├── property.routes.ts    # Route setup
-│   └── index.ts              # Exports
-│
-├── middleware/          # Express Middleware
-│   ├── error.middleware.ts   # Error handling
-│   └── index.ts              # Exports
-│
-├── common/              # Shared Utilities
-│   └── logger.ts        # Logging service
-│
-├── web/                 # Web Application Layer
-│   ├── server/
-│   │   └── index.ts     # Express setup
-│   └── index.ts         # App entry point
-│
-└── __tests__/           # Unit & Integration Tests
-    ├── services/        # Service tests
-    └── controllers/     # Controller tests
+├── features/
+│   └── properties/      # One complete business vertical
+│       ├── property.ts       # Domain types and DTOs
+│       ├── validation.ts     # HTTP input validation
+│       ├── repository.ts     # Persistence contract and adapter
+│       ├── service.ts        # Use cases and business rules
+│       ├── controller.ts     # HTTP handlers
+│       └── routes.ts         # Feature route composition
+├── auth/                 # Authentication vertical
+├── common/               # Shared errors and logging
+├── config/               # Environment configuration
+├── database/             # Shared Sequelize connection and definitions
+├── middleware/           # Cross-feature HTTP middleware
+├── models/common.ts      # Shared type utilities
+├── routes/index.ts       # Thin API composition root
+└── web/                  # Application entry point
 ```
 
 ## Design Patterns Used
 
-### 1. **Dependency Injection**
-Services are instantiated as singletons and injected into controllers, making them testable and loosely coupled.
+### 1. **Functional Composition**
+Features expose factories that close over their dependencies. The composition root creates the default service and controller, while tests can provide an in-memory store or mock service.
 
 ```typescript
-// Service singleton
-export default new PropertyService();
+// Feature-owned service factory
+export const createPropertyService = (store = createSequelizePropertyStore()) => ({ /* use cases */ });
 
-// Injected in controller
-async listProperties(req: Request, res: Response, next: NextFunction) {
-  const result = await propertyService.listProperties(filters);
-}
+// Controller receives a service dependency
+export const createPropertyController = (service = createPropertyService()) => ({ /* handlers */ });
 ```
 
 ### 2. **Repository Pattern**
-PropertyStore (in-memory) acts as a data repository, abstracting data access logic.
+PropertyStore is a functional repository contract. The in-memory implementation is used by tests, while the Sequelize adapter handles production persistence.
 
 ```typescript
-class PropertyStore {
-  private properties: Map<string, IProperty> = new Map();
-  create(dto: CreatePropertyDto): IProperty { }
-  update(id: string, dto: UpdatePropertyDto): IProperty | undefined { }
-}
+const createPropertyStore = (): PropertyStore => {
+  const properties = new Map<string, IProperty>();
+  return {
+    create: async (dto: CreatePropertyDto) => { /* create */ },
+    update: async (id: string, dto: UpdatePropertyDto) => { /* update */ },
+  };
+};
 ```
 
 ### 3. **DTO Pattern (Data Transfer Objects)**
@@ -137,34 +118,18 @@ Full TypeScript strict mode enabled:
 - **Coverage**: Aim for >80% code coverage
 - **Test Patterns**: Describe-it blocks with AAA (Arrange-Act-Assert)
 
-## Scalability Considerations
-
-1. **Replace In-Memory Store**: Replace PropertyStore with database queries
-2. **Caching Layer**: Add Redis for frequently accessed properties
-3. **Authentication**: Add JWT-based auth middleware
-4. **Validation**: Add input validation middleware
-5. **Pagination**: Built-in support for limit/offset
-6. **Logging**: Winston logger with multiple transports
-7. **Error Tracking**: Can integrate Sentry or similar
 
 ## Best Practices Implemented
 
-✅ **Separation of Concerns**
-- Controllers handle HTTP
-- Services handle business logic
-- Models define data contracts
+✅ **Vertical ownership**
+- A feature owns its HTTP, domain, validation, and persistence code.
+- Shared code is limited to infrastructure and genuinely cross-feature types.
 
-✅ **DRY (Don't Repeat Yourself)**
-- Centralized error handling
-- Reusable middleware
-- Common logger utility
 
-✅ **SOLID Principles**
-- Single Responsibility: Each class has one reason to change
-- Open/Closed: Easy to extend with new features
-- Liskov Substitution: Services can be swapped/mocked
-- Interface Segregation: Focused interfaces (IProperty)
-- Dependency Inversion: Depends on abstractions, not implementations
+✅ **Functional boundaries**
+- Dependencies are explicit factory arguments.
+- Stores are structural contracts and can be replaced without changing use cases.
+- New capabilities are added as new vertical slices rather than new global layers.
 
 ✅ **Type Safety**
 - Full TypeScript strict mode
@@ -177,15 +142,12 @@ Full TypeScript strict mode enabled:
 - Consistent naming conventions
 - Modular, single-purpose files
 
-## How to Extend
 
 ### Adding a New Resource (e.g., Tenant)
 
-1. Create `src/models/tenant.ts` with interfaces
-2. Create `src/services/tenant.service.ts` with business logic
-3. Create `src/controllers/tenant.controller.ts` with HTTP handlers
-4. Create `src/routes/tenant.routes.ts` with API definitions
-5. Add tests in `src/__tests__/`
-6. Register routes in `src/web/server/index.ts`
+1. Create `src/features/tenant/`.
+2. Add the tenant contract, validation, repository, service, controller, and routes inside that folder.
+3. Add focused tests next to the feature or under `src/__tests__/tenant/`.
+4. Register the feature routes in `src/routes/index.ts`.
 
 This modular structure makes adding features straightforward and predictable.

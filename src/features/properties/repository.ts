@@ -1,10 +1,11 @@
 import { Op, WhereOptions } from 'sequelize';
 import { v4 as uuidv4 } from 'uuid';
-import { withTransaction } from './index';
-import { PropertyRecord } from './models';
+import { withTransaction } from '../../database';
+import { PropertyRecord } from '../../database/models';
 import {
-  CreatePropertyDto, CrudStore, IProperty, PaginatedResponse, PropertyFilters, UpdatePropertyDto,
-} from '../models';
+  CreatePropertyDto, IProperty, PropertyFilters, UpdatePropertyDto,
+} from './property';
+import { CrudStore, PaginatedResponse } from '../../models/common';
 
 export type PropertyStore = CrudStore<IProperty, CreatePropertyDto, UpdatePropertyDto, PropertyFilters>;
 
@@ -15,8 +16,8 @@ const toDomain = (record: PropertyRecord): IProperty => ({
   amenities: record.amenities ?? [], createdAt: record.createdAt, updatedAt: record.updatedAt,
 });
 
-export class SequelizePropertyStore implements PropertyStore {
-  async getAll(filters: PropertyFilters): Promise<PaginatedResponse<IProperty>> {
+export const createSequelizePropertyStore = (): PropertyStore => ({
+  async getAll(filters) {
     const where: WhereOptions = {};
     if (filters.location) where.location = { [Op.iLike]: `%${filters.location}%` };
     if (filters.type) where.type = filters.type;
@@ -30,30 +31,30 @@ export class SequelizePropertyStore implements PropertyStore {
     const offset = Math.max(filters.offset || 0, 0);
     const result = await PropertyRecord.findAndCountAll({ where, limit, offset, order: [['createdAt', 'DESC']] });
     return { data: result.rows.map(toDomain), total: result.count, limit, offset };
-  }
-
-  async getById(id: string): Promise<IProperty | undefined> {
+  },
+  async getById(id) {
     const record = await PropertyRecord.findByPk(id);
     return record ? toDomain(record) : undefined;
-  }
-
-  async create(dto: CreatePropertyDto): Promise<IProperty> {
+  },
+  async create(dto) {
     return withTransaction(async transaction => {
       const record = await PropertyRecord.create({ id: uuidv4(), ...dto, amenities: dto.amenities ?? [] }, { transaction });
       return toDomain(record);
     });
-  }
-
-  async update(id: string, dto: UpdatePropertyDto): Promise<IProperty | undefined> {
+  },
+  async update(id, dto) {
     return withTransaction(async transaction => {
       const record = await PropertyRecord.findByPk(id, { transaction });
       if (!record) return undefined;
       await record.update(dto, { transaction });
       return toDomain(record);
     });
-  }
-
-  async delete(id: string): Promise<boolean> {
+  },
+  async delete(id) {
     return withTransaction(async transaction => (await PropertyRecord.destroy({ where: { id }, transaction })) === 1);
-  }
-}
+  },
+});
+
+export const SequelizePropertyStore: { new (): PropertyStore } = function SequelizePropertyStore(): PropertyStore {
+  return createSequelizePropertyStore();
+} as unknown as { new (): PropertyStore };

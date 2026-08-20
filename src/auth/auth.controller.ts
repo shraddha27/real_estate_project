@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { login, register } from './auth.service';
-import { ApiSuccessResponse } from '../models';
+import { ApiSuccessResponse } from '../models/common';
 
 export const registerUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {

@@ -9,5 +9,5 @@ export const handleValidationErrors: RequestHandler = (req, _res, next): void =>
     return;
   }
 
-  next(new AppError(result.array().map(error => error.msg).join(', '), 400, 'VALIDATION_ERROR'));
+  next(AppError(result.array().map(error => error.msg).join(', '), 400, 'VALIDATION_ERROR'));
 };

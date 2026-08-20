@@ -3,12 +3,12 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import propertyController from '../../controllers/property.controller';
-import propertyService from '../../services/property.service';
-import { PropertyType } from '../../models';
+import propertyController from '../../features/properties/controller';
+import propertyService from '../../features/properties/service';
+import { PropertyType } from '../../features/properties/property';
 
 // Mock the service
-jest.mock('../../services/property.service');
+jest.mock('../../features/properties/service');
 
 describe('PropertyController', () => {
   let req: Partial<Request>;

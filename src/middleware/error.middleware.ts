@@ -5,8 +5,8 @@
 
 import { Request, Response, NextFunction } from 'express';
 import logger from '../common/logger';
-import { AppError } from '../common/app-error';
-import { ApiErrorResponse } from '../models';
+import { isAppError } from '../common/app-error';
+import { ApiErrorResponse } from '../models/common';
 
 export interface ApiError extends Error {
   statusCode?: number;
@@ -22,7 +22,7 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction
 ): void => {
-  const appError = error instanceof AppError ? error : undefined;
+  const appError = isAppError(error) ? error : undefined;
   const statusCode = appError?.statusCode || 500;
   const message = appError?.isOperational ? appError.message : 'Internal Server Error';
   const code = appError?.code || 'INTERNAL_ERROR';

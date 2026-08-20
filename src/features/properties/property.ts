@@ -1,7 +1,4 @@
-/**
- * Property Model and Interfaces
- * Defines the structure of property data
- */
+import { CreateDto, Identifiable, Timestamped, UpdateDto } from '../../models/common';
 
 export enum PropertyType {
   RESIDENTIAL = 'residential',
@@ -15,12 +12,6 @@ export interface PropertyAmenity {
   available: boolean;
 }
 
-/**
- * Core Property Interface
- * Represents a real estate property
- */
-import { CreateDto, Identifiable, Timestamped, UpdateDto } from './common';
-
 export interface IProperty extends Identifiable, Timestamped {
   title: string;
   description: string;
@@ -33,19 +24,9 @@ export interface IProperty extends Identifiable, Timestamped {
   amenities: string[];
 }
 
-/**
- * Property Create Request DTO
- */
 export type CreatePropertyDto = CreateDto<IProperty, 'amenities'>;
-
-/**
- * Property Update Request DTO
- */
 export type UpdatePropertyDto = UpdateDto<CreatePropertyDto>;
 
-/**
- * Property Filter Query Parameters
- */
 export interface PropertyFilters {
   location?: string;
   type?: PropertyType;
@@ -56,7 +37,3 @@ export interface PropertyFilters {
   limit?: number;
   offset?: number;
 }
-
-/**
- * Paginated Response
- */

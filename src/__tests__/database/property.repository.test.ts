@@ -1,6 +1,6 @@
-import { PropertyType } from '../../models';
+import { PropertyType } from '../../features/properties/property';
 import { PropertyRecord } from '../../database/models';
-import { SequelizePropertyStore } from '../../database/property.repository';
+import { SequelizePropertyStore } from '../../features/properties/repository';
 
 jest.mock('../../database', () => ({
   withTransaction: jest.fn(async (operation: (transaction: object) => Promise<unknown>) => operation({})),

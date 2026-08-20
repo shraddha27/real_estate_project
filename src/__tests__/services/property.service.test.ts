@@ -2,8 +2,8 @@
  * Property Service Unit Tests
  */
 
-import { PropertyService, PropertyType } from '../../services/property.service';
-import { CreatePropertyDto } from '../../models';
+import { PropertyService } from '../../features/properties/service';
+import { PropertyType, CreatePropertyDto } from '../../features/properties/property';
 
 describe('PropertyService', () => {
   let service: PropertyService;

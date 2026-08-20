@@ -1,12 +1,7 @@
 import { ValidationChain, body, query } from 'express-validator';
-import { PropertyType } from '../models';
+import { PropertyType } from './property';
 
 const propertyTypes = Object.values(PropertyType);
-
-export const credentialsValidators: ValidationChain[] = [
-  body('username').isString().trim().isLength({ min: 3, max: 100 }),
-  body('password').isString().isLength({ min: 8, max: 200 }),
-];
 
 export const propertyValidators: ValidationChain[] = [
   body('title').isString().trim().isLength({ min: 1, max: 200 }),
@@ -29,7 +24,7 @@ export const updatePropertyValidators: ValidationChain[] = [
   body('type').optional().isIn(propertyTypes),
   body('bedrooms').optional().isInt({ min: 0 }).toInt(),
   body('bathrooms').optional().isInt({ min: 0 }).toInt(),
-  body('squareFeet').optional().isInt({ gt: 0 }).toInt(),
+  body('squareFeet').optional().isInt({ min: 1 }).toInt(),
   body('amenities').optional().isArray(),
   body('amenities.*').optional().isString().trim().notEmpty(),
   body().custom((_value, { req }) => {

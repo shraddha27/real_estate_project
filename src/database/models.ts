@@ -1,29 +1,38 @@
-import { DataTypes, Model, Sequelize } from 'sequelize';
-import { PropertyType } from '../models';
+import { DataTypes, Model, ModelStatic, Sequelize } from 'sequelize';
+import { PropertyType } from '../features/properties/property';
 
-export class PropertyRecord extends Model {
-  declare id: string;
-  declare title: string;
-  declare description: string;
-  declare location: string;
-  declare price: string;
-  declare type: PropertyType;
-  declare bedrooms: number | null;
-  declare bathrooms: number | null;
-  declare squareFeet: number;
-  declare amenities: string[];
-  declare createdAt: Date;
-  declare updatedAt: Date;
+export interface PropertyRecordAttributes {
+  id: string;
+  title: string;
+  description: string;
+  location: string;
+  price: number | string;
+  type: PropertyType;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  squareFeet: number;
+  amenities: string[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export class UserRecord extends Model {
-  declare id: string;
-  declare username: string;
-  declare passwordHash: string;
+type PropertyRecordModel = Model<PropertyRecordAttributes, Omit<PropertyRecordAttributes, 'createdAt' | 'updatedAt'>> & PropertyRecordAttributes;
+type UserRecordModel = Model<UserRecordAttributes, Omit<UserRecordAttributes, 'createdAt'>> & UserRecordAttributes;
+export type PropertyRecord = PropertyRecordAttributes;
+export type UserRecord = UserRecordAttributes;
+
+export interface UserRecordAttributes {
+  id: string;
+  username: string;
+  passwordHash: string;
+  createdAt: Date;
 }
+
+export let PropertyRecord: ModelStatic<PropertyRecordModel>;
+export let UserRecord: ModelStatic<UserRecordModel>;
 
 export const initializeModels = (sequelize: Sequelize): void => {
-  PropertyRecord.init({
+  PropertyRecord = sequelize.define<PropertyRecordModel>('PropertyRecord', {
     id: { type: DataTypes.UUID, primaryKey: true, allowNull: false },
     title: { type: DataTypes.STRING(200), allowNull: false },
     description: { type: DataTypes.TEXT, allowNull: false },
@@ -36,11 +45,12 @@ export const initializeModels = (sequelize: Sequelize): void => {
     amenities: { type: DataTypes.ARRAY(DataTypes.TEXT), allowNull: false, defaultValue: [] },
     createdAt: { type: DataTypes.DATE, allowNull: false, field: 'created_at' },
     updatedAt: { type: DataTypes.DATE, allowNull: false, field: 'updated_at' },
-  }, { sequelize, tableName: 'properties', timestamps: true, underscored: true });
+  }, { tableName: 'properties', timestamps: true, underscored: true });
 
-  UserRecord.init({
+  UserRecord = sequelize.define<UserRecordModel>('UserRecord', {
     id: { type: DataTypes.UUID, primaryKey: true, allowNull: false },
     username: { type: DataTypes.STRING(100), unique: true, allowNull: false },
     passwordHash: { type: DataTypes.TEXT, allowNull: false, field: 'password_hash' },
-  }, { sequelize, tableName: 'users', timestamps: true, updatedAt: false, underscored: true });
+    createdAt: { type: DataTypes.DATE, allowNull: false, field: 'created_at' },
+  }, { tableName: 'users', timestamps: true, updatedAt: false, underscored: true });
 };

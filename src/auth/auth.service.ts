@@ -34,7 +34,7 @@ export const register = async (username: string, password: string): Promise<Auth
     ).then(() => undefined));
   } catch (error) {
     if (hasDatabaseErrorCode(error, '23505')) {
-      throw new AppError('Username already exists', 409, 'CONFLICT');
+      throw AppError('Username already exists', 409, 'CONFLICT');
     }
     throw error;
   }
@@ -46,7 +46,7 @@ export const login = async (username: string, password: string): Promise<AuthRes
   const record = await UserRecord.findOne({ where: { username } });
 
   if (!record || !(await bcrypt.compare(password, record.passwordHash))) {
-    throw new AppError('Invalid username or password', 401, 'AUTHENTICATION_ERROR');
+    throw AppError('Invalid username or password', 401, 'AUTHENTICATION_ERROR');
   }
 
   const user: AuthUser = { id: record.id, username: record.username };
