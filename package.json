@@ -34,7 +34,6 @@
     "sequelize": "^6.37.8",
     "sequelize-cli": "^6.6.5",
     "swagger-ui-express": "^5.0.1",
-    "uuid": "^9.0.0",
     "winston": "^3.11.0",
     "zod": "^4.4.3"
   },
@@ -48,7 +47,6 @@
     "@types/pg": "^8.23.1",
     "@types/supertest": "^7.2.1",
     "@types/swagger-ui-express": "^4.1.8",
-    "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^6.2.1",
     "@typescript-eslint/parser": "^6.2.1",
     "eslint": "^8.45.0",

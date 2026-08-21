@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'node:crypto';
 import { UserRecord } from '../database/models';
 import { withTransaction } from '../database';
 import { environment } from '../config';
@@ -25,7 +25,7 @@ const hasDatabaseErrorCode = (error: unknown, code: string): boolean =>
 
 export const register = async (username: string, password: string): Promise<AuthResponse> => {
   const passwordHash = await bcrypt.hash(password, 12);
-  const user: AuthUser = { id: uuidv4(), username };
+  const user: AuthUser = { id: randomUUID(), username };
 
   try {
     await withTransaction(transaction => UserRecord.create(

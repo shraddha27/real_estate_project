@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import logger from '../../common/logger';
 import { AppError } from '../../common/app-error';
@@ -25,7 +25,7 @@ export const createInMemoryPropertyStore = (): PropertyStore => {
   ];
   samples.forEach(dto => {
     const now = new Date();
-    const property: IProperty = { id: uuidv4(), ...dto, amenities: dto.amenities ?? [], createdAt: now, updatedAt: now };
+    const property: IProperty = { id: randomUUID(), ...dto, amenities: dto.amenities ?? [], createdAt: now, updatedAt: now };
     properties.set(property.id, property);
   });
   return {
@@ -44,7 +44,7 @@ export const createInMemoryPropertyStore = (): PropertyStore => {
     async getById(id) { return properties.get(id); },
     async create(dto) {
       const now = new Date();
-      const property: IProperty = { id: uuidv4(), ...dto, amenities: dto.amenities || [], createdAt: now, updatedAt: now };
+      const property: IProperty = { id: randomUUID(), ...dto, amenities: dto.amenities || [], createdAt: now, updatedAt: now };
       properties.set(property.id, property);
       return property;
     },

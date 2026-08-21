@@ -1,5 +1,5 @@
+import { randomUUID } from 'node:crypto';
 import { Op, WhereOptions } from 'sequelize';
-import { v4 as uuidv4 } from 'uuid';
 import { withTransaction } from '../../database';
 import { PropertyRecord } from '../../database/models';
 import { IProperty } from './property';
@@ -37,7 +37,7 @@ export const createSequelizePropertyStore = (): PropertyStore => ({
   },
   async create(dto) {
     return withTransaction(async transaction => {
-      const record = await PropertyRecord.create({ id: uuidv4(), ...dto, amenities: dto.amenities ?? [] }, { transaction });
+      const record = await PropertyRecord.create({ id: randomUUID(), ...dto, amenities: dto.amenities ?? [] }, { transaction });
       return toDomain(record);
     });
   },
