@@ -2,12 +2,11 @@ import { Op, WhereOptions } from 'sequelize';
 import { v4 as uuidv4 } from 'uuid';
 import { withTransaction } from '../../database';
 import { PropertyRecord } from '../../database/models';
-import {
-  CreatePropertyDto, IProperty, PropertyFilters, UpdatePropertyDto,
-} from './property';
-import { CrudStore, PaginatedResponse } from '../../models/common';
+import { IProperty } from './property';
+import { ParsedCreateProperty, ParsedUpdateProperty, PropertyFilters } from './validation';
+import { CrudStore } from '../../models/common';
 
-export type PropertyStore = CrudStore<IProperty, CreatePropertyDto, UpdatePropertyDto, PropertyFilters>;
+export type PropertyStore = CrudStore<IProperty, ParsedCreateProperty, ParsedUpdateProperty, PropertyFilters>;
 
 const toDomain = (record: PropertyRecord): IProperty => ({
   id: record.id, title: record.title, description: record.description, location: record.location,

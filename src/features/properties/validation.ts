@@ -1,51 +1,43 @@
-import { ValidationChain, body, query } from 'express-validator';
+import { z } from 'zod';
 import { PropertyType } from './property';
 
-const propertyTypes = Object.values(PropertyType);
+const propertyInputShape = {
+  title: z.string({ error: 'Property title is required' }).trim().min(1, 'Property title is required').max(200),
+  description: z.string({ error: 'Property description is required' }).trim().min(1, 'Property description is required'),
+  location: z.string({ error: 'Property location is required' }).trim().min(1, 'Property location is required').max(200),
+  price: z.coerce.number({ error: 'Property price must be a positive number' }).positive({ error: 'Property price must be a positive number' }),
+  type: z.nativeEnum(PropertyType),
+  bedrooms: z.coerce.number().int().nonnegative().optional(),
+  bathrooms: z.coerce.number().int().nonnegative().optional(),
+  squareFeet: z.coerce.number({ error: 'Square feet must be a positive number' }).int().positive({ error: 'Square feet must be a positive number' }),
+  amenities: z.array(z.string().trim().min(1)).optional().default([]),
+};
 
-export const propertyValidators: ValidationChain[] = [
-  body('title').isString().trim().isLength({ min: 1, max: 200 }),
-  body('description').isString().trim().notEmpty(),
-  body('location').isString().trim().isLength({ min: 1, max: 200 }),
-  body('price').isFloat({ gt: 0 }).toFloat(),
-  body('type').isIn(propertyTypes),
-  body('bedrooms').optional().isInt({ min: 0 }).toInt(),
-  body('bathrooms').optional().isInt({ min: 0 }).toInt(),
-  body('squareFeet').isInt({ gt: 0 }).toInt(),
-  body('amenities').optional().isArray(),
-  body('amenities.*').optional().isString().trim().notEmpty(),
-];
+export const createPropertySchema = z.object(propertyInputShape).strict();
+export const updatePropertySchema = z.object(propertyInputShape).partial().strict().refine(
+  value => Object.keys(value).length > 0,
+  { message: 'At least one property field is required' },
+);
 
-export const updatePropertyValidators: ValidationChain[] = [
-  body('title').optional().isString().trim().isLength({ min: 1, max: 200 }),
-  body('description').optional().isString().trim().notEmpty(),
-  body('location').optional().isString().trim().isLength({ min: 1, max: 200 }),
-  body('price').optional().isFloat({ gt: 0 }).toFloat(),
-  body('type').optional().isIn(propertyTypes),
-  body('bedrooms').optional().isInt({ min: 0 }).toInt(),
-  body('bathrooms').optional().isInt({ min: 0 }).toInt(),
-  body('squareFeet').optional().isInt({ min: 1 }).toInt(),
-  body('amenities').optional().isArray(),
-  body('amenities.*').optional().isString().trim().notEmpty(),
-  body().custom((_value, { req }) => {
-    if (Object.keys(req.body).length === 0) throw new Error('At least one property field is required');
-    return true;
-  }),
-];
+export const propertyFiltersSchema = z.object({
+  location: z.string().trim().optional(),
+  type: z.nativeEnum(PropertyType).optional(),
+  minPrice: z.coerce.number().nonnegative().optional(),
+  maxPrice: z.coerce.number().nonnegative().optional(),
+  minBedrooms: z.coerce.number().int().nonnegative().optional(),
+  maxBedrooms: z.coerce.number().int().nonnegative().optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+  offset: z.coerce.number().int().nonnegative().optional(),
+}).strict().refine(
+  filters => filters.minPrice === undefined || filters.maxPrice === undefined || filters.minPrice <= filters.maxPrice,
+  { message: 'minPrice must be less than or equal to maxPrice', path: ['minPrice'] },
+).refine(
+  filters => filters.minBedrooms === undefined || filters.maxBedrooms === undefined || filters.minBedrooms <= filters.maxBedrooms,
+  { message: 'minBedrooms must be less than or equal to maxBedrooms', path: ['minBedrooms'] },
+);
 
-export const propertyFilterValidators: ValidationChain[] = [
-  query('location').optional().isString().trim(),
-  query('type').optional().isIn(propertyTypes),
-  query(['minPrice', 'maxPrice']).optional().isFloat({ min: 0 }).toFloat(),
-  query(['minBedrooms', 'maxBedrooms']).optional().isInt({ min: 0 }).toInt(),
-  query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
-  query('offset').optional().isInt({ min: 0 }).toInt(),
-  query('minPrice').optional().custom((value, { req }) => {
-    const maxPrice = req.query?.maxPrice;
-    return maxPrice === undefined || Number(value) <= Number(maxPrice);
-  }).withMessage('minPrice must be less than or equal to maxPrice'),
-  query('minBedrooms').optional().custom((value, { req }) => {
-    const maxBedrooms = req.query?.maxBedrooms;
-    return maxBedrooms === undefined || Number(value) <= Number(maxBedrooms);
-  }).withMessage('minBedrooms must be less than or equal to maxBedrooms'),
-];
+export type ParsedCreateProperty = z.output<typeof createPropertySchema>;
+export type ParsedUpdateProperty = z.output<typeof updatePropertySchema>;
+export type CreatePropertyDto = Omit<ParsedCreateProperty, 'amenities'> & { amenities?: string[] };
+export type UpdatePropertyDto = Partial<CreatePropertyDto>;
+export type PropertyFilters = z.output<typeof propertyFiltersSchema>;

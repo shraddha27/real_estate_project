@@ -17,11 +17,16 @@ export interface ApiError extends Error {
  * Global error handler middleware
  */
 export const errorHandler = (
-  error: ApiError,
+  error: unknown,
   _req: Request,
   res: Response,
-  _next: NextFunction
+  next: NextFunction
 ): void => {
+  if (res.headersSent) {
+    next(error);
+    return;
+  }
+
   const appError = isAppError(error) ? error : undefined;
   const statusCode = appError?.statusCode || 500;
   const message = appError?.isOperational ? appError.message : 'Internal Server Error';
@@ -31,7 +36,7 @@ export const errorHandler = (
     requestId: res.locals.requestId,
     statusCode,
     message,
-    stack: error.stack,
+    stack: error instanceof Error ? error.stack : undefined,
   });
 
   const response: ApiErrorResponse = {

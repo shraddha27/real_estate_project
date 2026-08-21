@@ -1,6 +1,8 @@
-import { ValidationChain, body } from 'express-validator';
+import { z } from 'zod';
 
-export const credentialsValidators: ValidationChain[] = [
-  body('username').isString().trim().isLength({ min: 3, max: 100 }),
-  body('password').isString().isLength({ min: 8, max: 200 }),
-];
+export const credentialsSchema = z.object({
+  username: z.string().trim().min(3).max(100),
+  password: z.string().min(8).max(200),
+}).strict();
+
+export type Credentials = z.infer<typeof credentialsSchema>;

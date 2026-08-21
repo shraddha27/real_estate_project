@@ -1,4 +1,4 @@
-import { CreateDto, Identifiable, Timestamped, UpdateDto } from '../../models/common';
+import { Identifiable, Timestamped } from '../../models/common';
 
 export enum PropertyType {
   RESIDENTIAL = 'residential',
@@ -24,16 +24,5 @@ export interface IProperty extends Identifiable, Timestamped {
   amenities: string[];
 }
 
-export type CreatePropertyDto = CreateDto<IProperty, 'amenities'>;
-export type UpdatePropertyDto = UpdateDto<CreatePropertyDto>;
-
-export interface PropertyFilters {
-  location?: string;
-  type?: PropertyType;
-  minPrice?: number;
-  maxPrice?: number;
-  minBedrooms?: number;
-  maxBedrooms?: number;
-  limit?: number;
-  offset?: number;
-}
+// Kept as compatibility exports while validation-owned DTOs live in validation.ts.
+export type { CreatePropertyDto, PropertyFilters, UpdatePropertyDto } from './validation';

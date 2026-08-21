@@ -13,6 +13,10 @@ initializeModels(sequelize);
 export const withTransaction = <T>(operation: (transaction: Transaction) => Promise<T>): Promise<T> =>
   sequelize.transaction(operation);
 
+export const checkDatabaseConnection = async (): Promise<void> => {
+  await sequelize.authenticate();
+};
+
 export const closeDatabase = async (): Promise<void> => {
   await sequelize.close();
 };

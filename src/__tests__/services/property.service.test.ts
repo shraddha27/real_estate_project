@@ -2,14 +2,14 @@
  * Property Service Unit Tests
  */
 
-import { PropertyService } from '../../features/properties/service';
+import { createInMemoryPropertyStore, PropertyService } from '../../features/properties/service';
 import { PropertyType, CreatePropertyDto } from '../../features/properties/property';
 
 describe('PropertyService', () => {
   let service: PropertyService;
 
   beforeEach(() => {
-    service = new PropertyService();
+    service = new PropertyService(createInMemoryPropertyStore());
   });
 
   describe('listProperties', () => {

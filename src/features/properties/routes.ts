@@ -1,14 +1,14 @@
-import { NextFunction, Request, Response, Router } from 'express';
-import propertyController from './controller';
-import { propertyFilterValidators, propertyValidators, updatePropertyValidators } from './validation';
+import { NextFunction, Response, Router } from 'express';
+import propertyController, { CreatePropertyRequest, ListPropertiesRequest, PropertyRequest, UpdatePropertyRequest } from './controller';
+import { createPropertySchema, propertyFiltersSchema, updatePropertySchema } from './validation';
 import { authenticate } from '../../auth/auth.middleware';
-import { handleValidationErrors } from '../../middleware/validate.middleware';
+import { validate } from '../../middleware/validate.middleware';
 
 const router = Router();
-router.get('/properties', propertyFilterValidators, handleValidationErrors, authenticate, (req: Request, res: Response, next: NextFunction) => propertyController.listProperties(req, res, next));
-router.get('/properties/:id', authenticate, (req, res, next) => propertyController.getProperty(req, res, next));
-router.post('/properties', propertyValidators, handleValidationErrors, authenticate, (req: Request, res: Response, next: NextFunction) => propertyController.createProperty(req, res, next));
-router.put('/properties/:id', updatePropertyValidators, handleValidationErrors, authenticate, (req: Request, res: Response, next: NextFunction) => propertyController.updateProperty(req, res, next));
-router.delete('/properties/:id', authenticate, (req, res, next) => propertyController.deleteProperty(req, res, next));
+router.get('/properties', validate(propertyFiltersSchema, 'query'), authenticate, (req: ListPropertiesRequest, res: Response, next: NextFunction) => propertyController.listProperties(req, res, next));
+router.get('/properties/:id', authenticate, (req: PropertyRequest, res: Response, next: NextFunction) => propertyController.getProperty(req, res, next));
+router.post('/properties', validate(createPropertySchema, 'body'), authenticate, (req: CreatePropertyRequest, res: Response, next: NextFunction) => propertyController.createProperty(req, res, next));
+router.put('/properties/:id', validate(updatePropertySchema, 'body'), authenticate, (req: UpdatePropertyRequest, res: Response, next: NextFunction) => propertyController.updateProperty(req, res, next));
+router.delete('/properties/:id', authenticate, (req: PropertyRequest, res: Response, next: NextFunction) => propertyController.deleteProperty(req, res, next));
 
 export default router;

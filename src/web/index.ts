@@ -7,12 +7,14 @@ import express from 'express';
 import { environment, validateEnvironment } from '../config';
 import { initializeApp, startServer } from './server';
 import logger from '../common/logger';
-import { closeDatabase } from '../database';
+import { checkDatabaseConnection, closeDatabase } from '../database';
 
 const main = async (): Promise<void> => {
   try {
     // Validate environment configuration
     validateEnvironment();
+    await checkDatabaseConnection();
+    logger.info('Database connection verified');
 
     // Create Express app
     const app = express();
@@ -22,12 +24,29 @@ const main = async (): Promise<void> => {
 
     // Start server
     const server = startServer(app, environment.PORT);
+    let shuttingDown = false;
     const shutdown = async (signal: string): Promise<void> => {
+      if (shuttingDown) return;
+      shuttingDown = true;
       logger.info(`Received ${signal}, shutting down`);
-      server.close(async () => {
+      const forceExitTimer = setTimeout(() => {
+        logger.error('Forced shutdown after timeout');
+        process.exit(1);
+      }, 10_000);
+      forceExitTimer.unref();
+
+      try {
+        await new Promise<void>((resolve, reject) => {
+          server.close(error => error ? reject(error) : resolve());
+        });
         await closeDatabase();
+        clearTimeout(forceExitTimer);
         process.exit(0);
-      });
+      } catch (error) {
+        clearTimeout(forceExitTimer);
+        logger.error('Graceful shutdown failed', { error });
+        process.exit(1);
+      }
     };
     process.once('SIGTERM', () => void shutdown('SIGTERM'));
     process.once('SIGINT', () => void shutdown('SIGINT'));

@@ -1,11 +1,22 @@
 import { v4 as uuidv4 } from 'uuid';
+import { z } from 'zod';
 import logger from '../../common/logger';
 import { AppError } from '../../common/app-error';
 import { createSequelizePropertyStore, PropertyStore } from './repository';
-import { IProperty, PropertyType, CreatePropertyDto, UpdatePropertyDto, PropertyFilters } from './property';
+import { IProperty, PropertyType } from './property';
+import {
+  createPropertySchema,
+  CreatePropertyDto,
+  ParsedCreateProperty,
+  ParsedUpdateProperty,
+  propertyFiltersSchema,
+  PropertyFilters,
+  updatePropertySchema,
+  UpdatePropertyDto,
+} from './validation';
 import { PaginatedResponse } from '../../models/common';
 
-const createInMemoryPropertyStore = (): PropertyStore => {
+export const createInMemoryPropertyStore = (): PropertyStore => {
   const properties = new Map<string, IProperty>();
   const samples: CreatePropertyDto[] = [
     { title: 'Modern City Apartment', description: 'Spacious 2-bedroom apartment in downtown', location: 'Manhattan, NYC', price: 850000, type: PropertyType.RESIDENTIAL, bedrooms: 2, bathrooms: 2, squareFeet: 1200, amenities: ['gym', 'pool', 'doorman', 'parking'] },
@@ -58,19 +69,18 @@ export interface PropertyServiceApi {
 
 export { PropertyType } from './property';
 
-const validatePropertyDto = <TDto extends Partial<CreatePropertyDto>>(dto: TDto, partial = false): void => {
-  if (!partial && (!dto.title || dto.title.trim().length === 0)) throw AppError('Property title is required', 400, 'VALIDATION_ERROR');
-  if (!partial && (!dto.location || dto.location.trim().length === 0)) throw AppError('Property location is required', 400, 'VALIDATION_ERROR');
-  if (dto.price !== undefined && (typeof dto.price !== 'number' || dto.price <= 0)) throw AppError('Property price must be a positive number', 400, 'VALIDATION_ERROR');
-  if (dto.type !== undefined && !Object.values(PropertyType).includes(dto.type)) throw AppError('Invalid property type', 400, 'VALIDATION_ERROR');
-  if (!partial && (!dto.type || !Object.values(PropertyType).includes(dto.type))) throw AppError('Invalid property type', 400, 'VALIDATION_ERROR');
-  if (dto.squareFeet !== undefined && (typeof dto.squareFeet !== 'number' || dto.squareFeet <= 0)) throw AppError('Square feet must be a positive number', 400, 'VALIDATION_ERROR');
-  if (!partial && (typeof dto.squareFeet !== 'number' || dto.squareFeet <= 0)) throw AppError('Square feet must be a positive number', 400, 'VALIDATION_ERROR');
+const parseOrThrow = <T>(schema: { safeParse(input: unknown): { success: true; data: T } | { success: false; error: z.ZodError } }, input: unknown): T => {
+  const result = schema.safeParse(input);
+  if (!result.success) {
+    throw AppError(result.error.issues.map(issue => issue.message).join(', '), 400, 'VALIDATION_ERROR');
+  }
+  return result.data;
 };
 
-export const createPropertyService = (store: PropertyStore = process.env.JEST_WORKER_ID ? createInMemoryPropertyStore() : createSequelizePropertyStore()): PropertyServiceApi => ({
+export const createPropertyService = (store: PropertyStore = createSequelizePropertyStore()): PropertyServiceApi => ({
   async listProperties(filters) {
-    const result = await store.getAll(filters);
+    const parsedFilters = parseOrThrow(propertyFiltersSchema, filters);
+    const result = await store.getAll(parsedFilters);
     logger.info('Properties listed', { total: result.total, filters });
     return result;
   },
@@ -79,10 +89,13 @@ export const createPropertyService = (store: PropertyStore = process.env.JEST_WO
     if (!property) throw AppError('Property not found', 404, 'NOT_FOUND');
     return property;
   },
-  async createProperty(dto) { validatePropertyDto(dto); return store.create(dto); },
+  async createProperty(dto) {
+    const parsed: ParsedCreateProperty = parseOrThrow(createPropertySchema, dto);
+    return store.create(parsed);
+  },
   async updateProperty(id, dto) {
-    validatePropertyDto(dto, true);
-    const property = await store.update(id, dto);
+    const parsed: ParsedUpdateProperty = parseOrThrow(updatePropertySchema, dto);
+    const property = await store.update(id, parsed);
     if (!property) throw AppError('Property not found', 404, 'NOT_FOUND');
     return property;
   },

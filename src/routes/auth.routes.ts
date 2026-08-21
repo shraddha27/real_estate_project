@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { loginUser, registerUser } from '../auth/auth.controller';
-import { handleValidationErrors } from '../middleware/validate.middleware';
-import { credentialsValidators } from '../auth/validation';
+import { validate } from '../middleware/validate.middleware';
+import { credentialsSchema } from '../auth/validation';
 
 const router = Router();
 
-router.post('/register', credentialsValidators, handleValidationErrors, registerUser);
-router.post('/login', credentialsValidators, handleValidationErrors, loginUser);
+router.post('/register', validate(credentialsSchema, 'body'), registerUser);
+router.post('/login', validate(credentialsSchema, 'body'), loginUser);
 
 export default router;

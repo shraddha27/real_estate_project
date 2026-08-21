@@ -80,6 +80,9 @@ npm run start:dev
 
 Server runs on `http://localhost:3000`
 
+`GET /health` is a liveness check. `GET /ready` verifies that the API can
+reach PostgreSQL and returns `503` until the database is available.
+
 Interactive API documentation is available at `http://localhost:3000/api-docs`.
 The raw OpenAPI document is available at `http://localhost:3000/api-docs.json`.
 
@@ -102,6 +105,9 @@ Start the API with a local PostgreSQL container:
 ```bash
 docker compose up --build
 ```
+
+Set a unique random `JWT_SECRET` of at least 32 characters before starting
+Compose. The API rejects placeholder secrets in production mode.
 
 The API is available at `http://localhost:3000` and Swagger at
 `http://localhost:3000/api-docs`. Compose runs migrations automatically before

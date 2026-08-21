@@ -1,10 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { login, register } from './auth.service';
 import { ApiSuccessResponse } from '../models/common';
+import { Credentials } from './validation';
 
-export const registerUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+type CredentialsRequest = Request<Record<string, never>, unknown, Credentials>;
+
+export const registerUser = async (req: CredentialsRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { username, password } = req.body as { username: string; password: string };
+    const { username, password } = req.body;
     const result = await register(username, password);
     const response: ApiSuccessResponse<typeof result> = { success: true, data: result };
     res.status(201).json(response);
@@ -13,9 +16,9 @@ export const registerUser = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
-export const loginUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const loginUser = async (req: CredentialsRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { username, password } = req.body as { username: string; password: string };
+    const { username, password } = req.body;
     const result = await login(username, password);
     const response: ApiSuccessResponse<typeof result> = { success: true, data: result };
     res.status(200).json(response);
